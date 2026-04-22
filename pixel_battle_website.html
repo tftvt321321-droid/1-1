@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pixel Battle</title>
+<style>
+body {
+  margin:0;
+  background:#888;
+  font-family:sans-serif;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+}
+
+#canvas {
+  display:grid;
+  grid-template-columns: repeat(100, 6px);
+  grid-template-rows: repeat(100, 6px);
+  gap:1px;
+  margin-top:20px;
+}
+
+.pixel {
+  width:6px;
+  height:6px;
+  background:#fff;
+}
+
+#palette {
+  display:flex;
+  margin-top:10px;
+  gap:5px;
+}
+
+.color {
+  width:20px;
+  height:20px;
+  cursor:pointer;
+  border:2px solid #000;
+}
+
+.admin-mode {
+  filter: grayscale(100%);
+}
+
+</style>
+</head>
+<body>
+
+<h2>Pixel Battle</h2>
+<div id="users">Users: 1</div>
+
+<div id="palette"></div>
+<div id="canvas"></div>
+
+<script>
+const canvas = document.getElementById('canvas');
+const palette = document.getElementById('palette');
+
+let currentColor = 'black';
+let lastPlace = 0;
+let cooldown = 15000;
+
+const colors = ['black','red','blue','green','yellow','purple','orange','white'];
+
+colors.forEach(c=>{
+  const el = document.createElement('div');
+  el.className='color';
+  el.style.background=c;
+  el.onclick=()=>{
+    currentColor=c;
+    playSound();
+  };
+  palette.appendChild(el);
+});
+
+for(let i=0;i<10000;i++){
+  const p=document.createElement('div');
+  p.className='pixel';
+
+  p.onclick=()=>{
+    if(Date.now()-lastPlace<cooldown)return;
+    lastPlace=Date.now();
+    p.style.background=currentColor;
+    splash(p);
+  };
+
+  canvas.appendChild(p);
+}
+
+function playSound(){
+  const ctx = new AudioContext();
+  const o = ctx.createOscillator();
+  const g = ctx.createGain();
+  o.connect(g);
+  g.connect(ctx.destination);
+  o.frequency.value = 600;
+  o.start();
+  g.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.2);
+}
+
+function splash(pixel){
+  for(let i=0;i<4;i++){
+    const s=document.createElement('div');
+    s.style.position='absolute';
+    s.style.width='4px';
+    s.style.height='4px';
+    s.style.background=currentColor;
+    s.style.left=pixel.getBoundingClientRect().left+'px';
+    s.style.top=pixel.getBoundingClientRect().top+'px';
+    document.body.appendChild(s);
+
+    const dx=(Math.random()-0.5)*50;
+    const dy=(Math.random()-0.5)*50;
+
+    s.animate([
+      {transform:'translate(0,0)',opacity:1},
+      {transform:`translate(${dx}px,${dy}px)`,opacity:0}
+    ],{duration:300});
+
+    setTimeout(()=>s.remove(),300);
+  }
+}
+
+// admin
+window.addEventListener('keydown',e=>{
+  if(prompt("Admin code?")==="1.1.0.0.22.99"){
+    document.body.classList.add('admin-mode');
+    adminPanel();
+  }
+});
+
+function adminPanel(){
+  const btn=document.createElement('button');
+  btn.innerText='Очистить холст';
+  btn.onclick=()=>{
+    document.querySelectorAll('.pixel').forEach(p=>p.style.background='white');
+  };
+  document.body.appendChild(btn);
+}
+
+</script>
+
+</body>
+</html>
